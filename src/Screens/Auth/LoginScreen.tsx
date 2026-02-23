@@ -1,13 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
-import RootNavigator from './src/Navigation/RootNavigator'
 
-const App = () => {
+const LoginScreen = () => {
   return (
-    <RootNavigator />
+    <View>
+      <Text>LoginScreen</Text>
+    </View>
   )
 }
 
-export default App
+export default LoginScreen
 
 const styles = StyleSheet.create({})
