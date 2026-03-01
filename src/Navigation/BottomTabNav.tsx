@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../Screens/HomeScreen';
 import JournalScreen from '../Screens/JournalScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import TodoScreen from '../Screens/TodoScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -43,6 +44,19 @@ const BottomTabNav = () => {
               name={focused ? 'mic' : 'mic-outline'}
               size={size}
               color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="TodoScreen"
+        component={TodoScreen}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'list' : 'list-outline'}
+              color={color}
+              size={size}
             />
           ),
         }}
