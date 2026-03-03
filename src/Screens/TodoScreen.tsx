@@ -7,8 +7,9 @@ import {
   FlatList,
   Modal,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Todo {
   id: string;
@@ -20,6 +21,10 @@ const TodoScreen = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
+
+  // edit
+  const [editInput, setEditInput] = useState<string>('');
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // modal
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -73,24 +78,97 @@ const TodoScreen = () => {
     setSelectedTodoId(null);
   };
 
+  // editPress
+  const handleEditPress = (todo: Todo) => {
+    setIsEditing(true);
+    setSelectedTodoId(todo.id);
+    setEditInput(todo.title);
+    setModalVisible(true);
+  };
+
+  const updateTodo = () => {
+    if (!selectedTodoId || !editInput.trim()) return;
+
+    setTodos(prev =>
+      prev.map(todo =>
+        todo.id === selectedTodoId
+          ? { ...todo, title: editInput.trim() }
+          : todo,
+      ),
+    );
+
+    setIsEditing(false);
+    setSelectedTodoId(null);
+    setEditInput('');
+    setModalVisible(false);
+  };
+
+  // Load Todos When App Starts
+
+  useEffect(() => {
+    const loadTodos = async () => {
+      try {
+        const storedTodos = await AsyncStorage.getItem('todos');
+
+        if (storedTodos !== null) {
+          setTodos(JSON.parse(storedTodos));
+        }
+      } catch (error) {
+        console.log('Error loading todos', error);
+      }
+    };
+
+    loadTodos();
+  }, []);
+
+  useEffect(() => {
+    // if (todos.length === 0) return;
+
+    const saveTodos = async () => {
+      try {
+        await AsyncStorage.setItem('todos', JSON.stringify(todos));
+      } catch (error) {
+        console.log('Error saving todos', error);
+      }
+    };
+
+    saveTodos();
+  }, [todos]);
+
   const renderModal = () => (
     <Modal
       transparent={true}
       animationType="fade"
       visible={modalVisible}
       // close the modal when user clicks outside the modal
-      onRequestClose={() => setModalVisible(false)}
+      onRequestClose={() => {
+        setModalVisible(false);
+        setSelectedTodoId(null);
+        setIsEditing(false);
+      }}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
+          {/* Title Section */}
           <Text style={{ fontSize: 16, marginVertical: 20 }}>
-            Do you really want to delete this todo?
+            {isEditing
+              ? 'Edit your Todo'
+              : ' Do you really want to delete this todo?'}
           </Text>
+              {/* Body Section */}
+              {isEditing && (
+               <TextInput value={editInput} onChangeText={setEditInput} />
+              )}
           <View
-            style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            style={{ flexDirection: 'row', justifyContent: 'space-between',marginTop:20 }}
           >
+            {/* Cancel */}
             <TouchableOpacity
-              onPress={() => setModalVisible(false)}
+              onPress={() => {
+                setModalVisible(false);
+                setSelectedTodoId(null);
+                setIsEditing(false);
+              }}
               activeOpacity={0.7}
             >
               <Text
@@ -106,7 +184,9 @@ const TodoScreen = () => {
                 Cancel
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={confirmDelete} activeOpacity={0.7}>
+            {/* Action */}
+            <TouchableOpacity
+             onPress={isEditing ? updateTodo : confirmDelete} activeOpacity={0.7}>
               <Text
                 style={{
                   backgroundColor: 'red',
@@ -117,7 +197,7 @@ const TodoScreen = () => {
                   fontSize: 16,
                 }}
               >
-                Delete
+               {isEditing ? 'Edit' : 'Delete'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -159,6 +239,10 @@ const TodoScreen = () => {
               >
                 {item.title}
               </Text>
+
+              <TouchableOpacity onPress={() => handleEditPress(item)}>
+                <Text style={{ fontSize: 18, marginRight: 10 }}>✏️</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity onPress={() => handleDeletePress(item.id)}>
                 <Text style={{ fontSize: 18 }}>🗑️</Text>
@@ -247,5 +331,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 12,
     borderWidth: 1,
+    borderColor: '#ddd',
   },
 });
